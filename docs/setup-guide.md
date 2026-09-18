@@ -35,8 +35,8 @@ I always run my hardening script first on a fresh VPS before installing anything
 Once the box is hardened, SSH in as your non-root user with sudo access:
 
 ```bash
-git clone https://github.com/YOUR_USER/swizguard.git
-cd swizguard
+git clone https://github.com/Web-Create1/SwizGuard.git
+cd SwizGuard
 sudo ./swizguard setup
 ```
 

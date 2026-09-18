@@ -5,6 +5,40 @@ All notable changes to SwizGuard will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **The first `swizguard add` on a fresh server always failed.** With no peers
+  yet, the IP-allocation `grep` matched nothing and exited 1; under
+  `set -o pipefail` that aborted the script before it printed anything. Every
+  new install hit this on its first client.
+- **VLESS share links and QR codes could never connect.** The URL omitted
+  `flow=xtls-rprx-vision` while the server requires it, so fallback clients
+  (Hiddify, Shadowrocket) failed the handshake with a flow mismatch.
+- `swizguard status` exited early and skipped the camouflage summary whenever
+  `ss | grep` matched nothing — the usual case when Xray is stopped, which is
+  exactly when you run `status`. Zero-peer servers also printed a bogus entry.
+- `swizguard regen` silently fell back to the hardcoded address `fd07::72` when
+  it could not read a peer's IPv6, handing a second client an address another
+  one already owned. It now derives the address from the client's IPv4 octet.
+- `swizguard rekey` told you to recover with `swizguard add <name>`, which
+  refuses to run for an existing client. It now points at `regen`.
+- `setup-server.sh` aborted without its own error message when the public-IP,
+  Xray-version or default-route lookups failed, and would unzip a failed
+  download as if it were a release. `openssl`, used for the short ID, is now
+  installed rather than assumed.
+
+### Added
+- Raspberry Pi support: `armv7l` builds, a NAT/CGNAT warning when no local
+  interface holds the detected public IP, and a [Raspberry Pi guide](docs/raspberry-pi.md)
+  covering port forwarding, DDNS and Pi-specific operational notes.
+- `SERVER_IP` may now be preset to an IP or hostname before `setup`, for
+  home servers behind NAT and for DDNS names that outlive a changing IP.
+- `WG_SUBNET6` is recorded in `credentials.env` so `add` and `regen` share one
+  source of truth for the IPv6 prefix.
+- Client count is capped at 254 with a clear message instead of silently
+  generating an invalid address.
+
 ## [1.0.0] — 2026-04-08
 
 First public release.

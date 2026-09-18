@@ -108,6 +108,11 @@ None of this is me trusting someone else's marketing copy. It's stuff I can poin
 - Any cheap VPS — Vultr, Linode, Hetzner, DigitalOcean, whatever
 - Port 443/tcp open to the internet
 
+Raspberry Pi works too — Pi OS Bookworm is Debian 12 and a Pi 5 is arm64, so the
+installer picks the right Xray build unchanged. The catch is the last line above:
+a Pi at home is behind NAT and needs port 443 forwarded to it, which CGNAT
+connections cannot do. See [Raspberry Pi guide](docs/raspberry-pi.md).
+
 ### Desktop (macOS / Linux / Windows)
 - `xray-core` v1.8 or newer, v26.x recommended
 - macOS: `brew install xray`
@@ -130,9 +135,16 @@ None of this is me trusting someone else's marketing copy. It's stuff I can poin
 On a fresh VPS, ideally after running a hardening script first (see below):
 
 ```bash
-git clone https://github.com/YOUR_USER/swizguard.git
-cd swizguard
+git clone https://github.com/Web-Create1/SwizGuard.git
+cd SwizGuard
 sudo ./swizguard setup
+```
+
+Self-hosting at home instead of on a VPS? Pass the address clients should dial —
+a DDNS hostname keeps working when your ISP rotates your IP:
+
+```bash
+sudo SERVER_IP=myhome.duckdns.org ./swizguard setup
 ```
 
 That's it. Sixty seconds later you have:
@@ -234,6 +246,7 @@ If you visit `https://YOUR_VPS_IP` directly in Firefox, you'll get a "cert doesn
 
 - [How It Works](docs/how-it-works.md) — technical deep dive on the chain, REALITY, Vision flow, threat model
 - [Setup Guide](docs/setup-guide.md) — step-by-step server deployment, client generation, mobile setup
+- [Raspberry Pi](docs/raspberry-pi.md) — running the server on a Pi 5 at home: NAT, CGNAT, port forwarding, DDNS
 - [Troubleshooting](docs/troubleshooting.md) — every weird issue I hit during development, and how I fixed it
 
 ## What this protects against
