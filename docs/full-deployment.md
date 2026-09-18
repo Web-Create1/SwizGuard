@@ -297,9 +297,16 @@ Only apps pointed at the SOCKS proxy use it. To send a specific command through:
 export ALL_PROXY=socks5://127.0.0.1:10808
 ```
 
-Routing the Pi's *entire* system through the VPS, or routing other devices in the
-house through it, needs transparent-proxy or TUN setup that this repo does not
-ship. Ask if you want that built.
+Routing the Pi's *entire* system through the VPS, or routing other devices in
+the house through it, needs a TUN setup rather than a SOCKS proxy. That is
+built: see [pi-router-integration.md](pi-router-integration.md), which turns a
+`swizguard add` client into the config a Raspberry Pi router uses to carry an
+entire LAN.
+
+Note that it is a different machine from this one. A Pi running the SwizGuard
+*server* for home access and a Pi routing your LAN through the VPS collide on
+`wg1`, on UDP 51821, and on who writes the firewall. The integration page opens
+with that table.
 
 ---
 

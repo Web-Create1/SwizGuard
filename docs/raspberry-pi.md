@@ -118,6 +118,17 @@ sudo ./swizguard status
 sudo wg show wg1        # peers should show endpoint 127.0.0.1:xxxxx
 ```
 
+## Using a Pi as a router for the whole house
+
+Everything above is about running the SwizGuard *server* on a Pi so you can
+reach your home network from outside. The opposite job, a Pi that forwards
+every device in the house out through your VPS, is a client-side build and is
+documented separately in
+[pi-router-integration.md](pi-router-integration.md).
+
+Do not do both on one Pi. They collide on the `wg1` interface name, on UDP
+51821, and on which tool owns the firewall.
+
 ## Pi-specific notes
 
 **Storage.** Run from an NVMe HAT or a decent USB SSD if you can. SD cards die
