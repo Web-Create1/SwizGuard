@@ -24,15 +24,20 @@ fi
 # WireGuard
 if ip link show wg1 &>/dev/null; then
     echo -e "  ${G}[+]${X} WireGuard: running"
-    PEERS=$(wg show wg1 peers | wc -l)
+    PEER_LIST=$(wg show wg1 peers || true)
+    PEERS=$(printf '%s' "$PEER_LIST" | grep -c . || true)
     echo -e "  ${C}[*]${X} Peers:     $PEERS configured"
 
     # Show connected peers (those with recent handshake)
     echo ""
     echo -e "  ${B}Connected peers:${X}"
+    if [ -z "$PEER_LIST" ]; then
+        echo "    (none yet — add one with: sudo ./swizguard add <name>)"
+    fi
     while IFS= read -r peer; do
-        LAST=$(wg show wg1 latest-handshakes | grep "$peer" | awk '{print $2}')
-        NAME=$(grep -B1 "$peer" /etc/wireguard/wg1.conf 2>/dev/null | grep "^#" | sed 's/^# //' || echo "unknown")
+        [ -n "$peer" ] || continue
+        LAST=$(wg show wg1 latest-handshakes | grep -F "$peer" | awk '{print $2}' || true)
+        NAME=$(grep -B1 -F "$peer" /etc/wireguard/wg1.conf 2>/dev/null | grep "^#" | sed 's/^# //' || echo "unknown")
         NOW=$(date +%s)
         if [ -n "$LAST" ] && [ "$LAST" -ne 0 ]; then
             AGO=$(( NOW - LAST ))
@@ -44,7 +49,7 @@ if ip link show wg1 &>/dev/null; then
         else
             echo -e "    ${R}○${X} $NAME — never connected"
         fi
-    done <<< "$(wg show wg1 peers)"
+    done <<< "$PEER_LIST"
 else
     echo -e "  ${R}[✗]${X} WireGuard: stopped"
 fi
@@ -52,7 +57,7 @@ fi
 # Ports
 echo ""
 echo -e "  ${B}Listening ports:${X}"
-ss -tlnp | grep -E "(xray|wireguard)" | while read -r line; do
+ss -tlnp 2>/dev/null | { grep -E "(xray|wireguard)" || true; } | while read -r line; do
     echo "    $line"
 done
 

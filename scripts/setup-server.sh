@@ -38,6 +38,7 @@ ARCH=$(uname -m)
 case "$ARCH" in
     x86_64)  XRAY_ARCH="64" ;;
     aarch64) XRAY_ARCH="arm64-v8a" ;;
+    armv7l)  XRAY_ARCH="arm32-v7a" ;;
     *)       fail "Unsupported architecture: $ARCH" ;;
 esac
 
@@ -61,7 +62,7 @@ mkdir -p "$SWIZ_DIR" "$XRAY_DIR"
 
 info "Installing dependencies..."
 apt update -qq
-apt install -y -qq wireguard qrencode iptables unzip curl > /dev/null 2>&1
+apt install -y -qq wireguard qrencode iptables unzip curl openssl > /dev/null 2>&1
 ok "Dependencies installed"
 
 # ─── Generate WireGuard keys ─────────────────────────────────────
@@ -78,9 +79,23 @@ ok "Server WG keys generated"
 
 # ─── Detect public IP ────────────────────────────────────────────
 
-SERVER_IP=$(curl -4 -s ifconfig.me || curl -4 -s icanhazip.com)
-[ -z "$SERVER_IP" ] && fail "Could not detect public IP"
+# SERVER_IP may be preset: on a home server behind NAT the address clients
+# must dial is the router's WAN IP or a DDNS hostname, not anything this box
+# can see on an interface.
+SERVER_IP="${SERVER_IP:-}"
+if [ -z "$SERVER_IP" ]; then
+    SERVER_IP=$(curl -4 -s --max-time 10 ifconfig.me || true)
+    [ -z "$SERVER_IP" ] && SERVER_IP=$(curl -4 -s --max-time 10 icanhazip.com || true)
+fi
+[ -z "$SERVER_IP" ] && fail "Could not detect public IP. Re-run with SERVER_IP=<ip-or-hostname>"
 ok "Server IP: $SERVER_IP"
+
+if ! ip -4 addr show 2>/dev/null | grep -qw "$SERVER_IP"; then
+    warn "No local interface holds $SERVER_IP — this host is behind NAT."
+    warn "Forward TCP $XRAY_PORT on your router to this machine or no client"
+    warn "will reach it. On CGNAT (most mobile/fibre ISPs) forwarding is not"
+    warn "available and you need a VPS or a tunnel instead."
+fi
 
 # ─── Enable IP forwarding ────────────────────────────────────────
 
@@ -120,7 +135,7 @@ ok "IP forwarding enabled"
 
 # ─── Detect default interface ────────────────────────────────────
 
-DEFAULT_IF=$(ip -o -4 route show default | awk '{print $5}' | head -1)
+DEFAULT_IF=$(ip -o -4 route show default | awk '{print $5}' | head -1 || true)
 [ -z "$DEFAULT_IF" ] && fail "Could not detect default network interface"
 info "Default interface: $DEFAULT_IF"
 
@@ -153,13 +168,14 @@ ok "WireGuard configured on :$WG_PORT"
 
 info "Installing Xray-core..."
 
-XRAY_VERSION=$(curl -s "https://api.github.com/repos/XTLS/Xray-core/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)
+XRAY_VERSION=$(curl -s --max-time 20 "https://api.github.com/repos/XTLS/Xray-core/releases/latest" \
+    | grep '"tag_name"' | cut -d'"' -f4 || true)
 [ -z "$XRAY_VERSION" ] && fail "Could not fetch Xray version"
 info "Xray version: $XRAY_VERSION"
 
 XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/${XRAY_VERSION}/Xray-linux-${XRAY_ARCH}.zip"
 cd /tmp
-curl -sLO "$XRAY_URL"
+curl -sSLO --fail "$XRAY_URL" || fail "Download failed: $XRAY_URL"
 unzip -qo "Xray-linux-${XRAY_ARCH}.zip" -d /usr/local/bin/xray-tmp
 mv /usr/local/bin/xray-tmp/xray /usr/local/bin/xray
 chmod +x /usr/local/bin/xray
@@ -300,6 +316,7 @@ CAMOUFLAGE_DEST=$CAMOUFLAGE_DEST
 SERVER_WG_PUBLIC_KEY=$SERVER_WG_PUBKEY
 SERVER_WG_PRIVATE_KEY=$SERVER_WG_PRIVKEY
 WG_SUBNET=$WG_SUBNET
+WG_SUBNET6=$WG_SUBNET6
 WG_MTU=$WG_MTU
 CREDEOF
 

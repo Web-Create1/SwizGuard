@@ -21,13 +21,18 @@ fail()  { echo -e "  ${R}[✗]${X} $1"; exit 1; }
 
 CLIENT_NAME="$1"
 SWIZ_DIR="/etc/swizguard"
+WG_CONF="/etc/wireguard/wg1.conf"
 CRED_FILE="$SWIZ_DIR/credentials.env"
 CLIENT_DIR="$SWIZ_DIR/clients/$CLIENT_NAME"
 
 [ ! -f "$CRED_FILE" ] && fail "Server not set up — run setup-server.sh first"
 [ -d "$CLIENT_DIR" ] && fail "Client '$CLIENT_NAME' already exists"
 
+# shellcheck source=/dev/null
 source "$CRED_FILE"
+
+# Older installs predate WG_SUBNET6 in credentials.env.
+WG_SUBNET6="${WG_SUBNET6:-fd07::7}"
 
 echo -e "${C}${B}"
 echo "╔══════════════════════════════════════════════════════╗"
@@ -39,14 +44,17 @@ echo -e "${X}"
 # Find the highest IPv4 octet currently in use and increment, so removing
 # a peer doesn't cause the next add to collide with an existing one.
 
-HIGHEST=$(grep -oE "${WG_SUBNET//./\\.}\.[0-9]+/32" /etc/wireguard/wg1.conf 2>/dev/null \
-    | awk -F'[./]' '{print $4}' | sort -n | tail -1)
+# `|| true` matters: on a fresh server no peer exists yet, grep exits 1, and
+# under `set -o pipefail` that would abort the very first `swizguard add`.
+HIGHEST=$(grep -oE "${WG_SUBNET//./\\.}\.[0-9]+/32" "$WG_CONF" 2>/dev/null \
+    | awk -F'[./]' '{print $4}' | sort -n | tail -1 || true)
 HIGHEST=${HIGHEST:-1}  # .1 is the server itself
 CLIENT_NUM=$((HIGHEST + 1))
 if [ "$CLIENT_NUM" -lt 2 ]; then CLIENT_NUM=2; fi
+[ "$CLIENT_NUM" -gt 254 ] && fail "Subnet ${WG_SUBNET}.0/24 is full (254 clients)"
 
 CLIENT_IPV4="${WG_SUBNET}.${CLIENT_NUM}"
-CLIENT_IPV6="fd07::7${CLIENT_NUM}"
+CLIENT_IPV6="${WG_SUBNET6}${CLIENT_NUM}"
 
 info "Client tunnel IP: $CLIENT_IPV4 / $CLIENT_IPV6"
 
@@ -64,7 +72,7 @@ ok "Client WireGuard keys generated"
 
 # ─── Add peer to server WireGuard ────────────────────────────────
 
-cat >> /etc/wireguard/wg1.conf <<PEEREOF
+cat >> "$WG_CONF" <<PEEREOF
 
 [Peer]
 # $CLIENT_NAME

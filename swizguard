@@ -69,7 +69,7 @@ cmd_share() {
 
     source "$SWIZ_DIR/credentials.env"
 
-    local vless_url="vless://${CLIENT_UUID}@${SERVER_IP}:${XRAY_PORT}?encryption=none&security=reality&sni=${CAMOUFLAGE_DEST}&fp=chrome&pbk=${REALITY_PUBLIC_KEY}&sid=${SHORT_ID}&type=tcp#SwizGuard-${name}"
+    local vless_url="vless://${CLIENT_UUID}@${SERVER_IP}:${XRAY_PORT}?encryption=none&security=reality&sni=${CAMOUFLAGE_DEST}&fp=chrome&pbk=${REALITY_PUBLIC_KEY}&sid=${SHORT_ID}&type=tcp&flow=xtls-rprx-vision#SwizGuard-${name}"
 
     echo ""
     echo -e "  ${B}Deployment options for '$name':${X}"
@@ -128,7 +128,7 @@ cmd_list() {
     echo -e "  ${B}Clients:${X}"
     for c in "$SWIZ_DIR/clients"/*/; do
         [ -d "$c" ] || continue
-        local name=$(basename "$c")
+        local name; name=$(basename "$c")
         echo "    - $name"
     done
     echo ""
@@ -202,7 +202,7 @@ cmd_rekey() {
     systemctl restart xray
     ok "REALITY keys rotated"
     ok "New public key: $new_pub"
-    warn "Regenerate all client configs with: ./swizguard add <name>"
+    warn "Regenerate all client configs with: ./swizguard regen <name>"
 }
 
 cmd_upgrade_vision() {
@@ -228,7 +228,7 @@ cmd_upgrade_vision() {
     warn "Now regenerate ALL client configs:"
     for c in "$SWIZ_DIR/clients"/*/; do
         [ -d "$c" ] || continue
-        local name=$(basename "$c")
+        local name; name=$(basename "$c")
         echo "    sudo ./swizguard regen $name"
     done
     echo ""
@@ -257,7 +257,9 @@ cmd_regen() {
     local client_ipv4
     client_ipv4=$(echo "$peer_line" | grep -oE '10\.7\.0\.[0-9]+')
     local client_ipv6
-    client_ipv6=$(echo "$peer_line" | grep -oE 'fd07::7[0-9]+' || echo "fd07::72")
+    client_ipv6=$(echo "$peer_line" | grep -oE 'fd07::7[0-9a-f]+' || true)
+    # Never guess a literal: a wrong address collides with another peer.
+    [ -z "$client_ipv6" ] && client_ipv6="fd07::7${client_ipv4##*.}"
 
     info "Regenerating configs for '$name' ($client_ipv4 / $client_ipv6)..."
 
