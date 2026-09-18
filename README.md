@@ -113,6 +113,10 @@ installer picks the right Xray build unchanged. The catch is the last line above
 a Pi at home is behind NAT and needs port 443 forwarded to it, which CGNAT
 connections cannot do. See [Raspberry Pi guide](docs/raspberry-pi.md).
 
+To point a Pi the other way, as a router carrying every device in the house out
+through your VPS, see [Pi router integration](docs/pi-router-integration.md).
+That one is a client-side build and needs no inbound port at all.
+
 ### Desktop (macOS / Linux / Windows)
 - `xray-core` v1.8 or newer, v26.x recommended
 - macOS: `brew install xray`

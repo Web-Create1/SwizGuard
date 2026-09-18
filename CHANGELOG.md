@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Transparent router support.** `full-deployment.md` said routing a whole LAN
+  through the VPS needed TUN setup this repo did not ship. It does now.
+  `scripts/make-router-config.sh` converts a `swizguard add` client into the
+  sing-box config a Raspberry Pi router uses to forward an entire network, and
+  `docs/pi-router-integration.md` covers the build. It writes a file and
+  nothing else: no service, no port, no firewall rule.
+- **The collision table for running SwizGuard alongside a Pi router.** Both
+  projects name their WireGuard interface `wg1` and both listen on UDP 51821,
+  the generated `wg1.conf` PostUp adds MASQUERADE onto the WAN, and setup
+  prefers UFW. Four of those five failures are silent. The rule that avoids all
+  of them: the Pi runs the client, the VPS runs the server.
+
 ### Fixed
 - **The first `swizguard add` on a fresh server always failed.** With no peers
   yet, the IP-allocation `grep` matched nothing and exited 1; under
