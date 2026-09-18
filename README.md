@@ -247,6 +247,7 @@ If you visit `https://YOUR_VPS_IP` directly in Firefox, you'll get a "cert doesn
 - [How It Works](docs/how-it-works.md) — technical deep dive on the chain, REALITY, Vision flow, threat model
 - [Setup Guide](docs/setup-guide.md) — step-by-step server deployment, client generation, mobile setup
 - [Raspberry Pi](docs/raspberry-pi.md) — running the server on a Pi 5 at home: NAT, CGNAT, port forwarding, DDNS
+- [Full deployment](docs/full-deployment.md) — the two-server build: a VPS for privacy plus a Pi at home for remote access, end to end
 - [Troubleshooting](docs/troubleshooting.md) — every weird issue I hit during development, and how I fixed it
 
 ## What this protects against

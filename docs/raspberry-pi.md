@@ -148,3 +148,7 @@ and is attributable to your household. That is exactly what you want for
 reaching your own network from a hotel, and exactly what you do not want if your
 threat model involves hiding from your ISP — your ISP is the one carrying it.
 See the threat model in [how-it-works.md](how-it-works.md).
+
+If you want both — a stealth exit node *and* access back home — you need a
+second install off-site, because one box cannot be both. See
+[full-deployment.md](full-deployment.md) for the two-server build.
